@@ -9,7 +9,7 @@ export const useCitaStore = defineStore('cita', {
     medicoNombre: null,
     especialidadId: null,
     especialidadNombre: null,
-    estado: 'pendiente'
+    estado: 'reservada'
   }),
   actions: {
     setEstudiante(id) {

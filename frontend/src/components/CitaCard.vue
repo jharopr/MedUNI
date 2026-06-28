@@ -6,6 +6,15 @@
       <div v-if="loading" class="text-muted small">Cargando…</div>
     </header>
 
+    <!-- Modal de Calificación -->
+    <CalificarModal
+      :mostrar="mostrarModalCalificar"
+      :cita="citaParaCalificar"
+      :estudianteId="estudianteId"
+      @cerrar="mostrarModalCalificar = false"
+      @calificacion-enviada="onCalificacionEnviada"
+    />
+
     <!-- vacío -->
     <div v-if="!loading && citas.length === 0" class="alert alert-secondary py-2">
       No tienes citas registradas.
@@ -35,9 +44,17 @@
             {{ c.especialidadNombre }} • {{ c.medicoNombre }}
           </div>
         </div>
-        <span class="badge" :class="estadoBadgeClass(c.estado)">
-          {{ capitalizar(c.estado) }}
-        </span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge" :class="estadoBadgeClass(c.estado)">
+            {{ capitalizar(c.estado) }}
+          </span>
+          <span v-if="c.horaAtencion && !c.tieneCalificacion" class="badge bg-success">
+            <i class="bi bi-star me-1"></i>Pendiente calificar
+          </span>
+          <span v-if="c.tieneCalificacion" class="badge bg-info">
+            <i class="bi bi-star-fill me-1"></i>Calificada ({{ c.calificacion }}/5)
+          </span>
+        </div>
       </li>
     </ul>
 
@@ -65,16 +82,40 @@
           <dd class="col-8 col-sm-9">{{ formatHora(citaSeleccionada.hora) }}</dd>
         </dl>
 
-        <div class="d-flex gap-2">
+        <!-- Mostrar calificación si ya tiene -->
+        <div v-if="citaSeleccionada.tieneCalificacion" class="alert alert-info mb-3">
+          <div class="d-flex align-items-center gap-2">
+            <strong>Tu calificación:</strong>
+            <div class="calificacion-mostrada">
+              <i 
+                v-for="i in 5" 
+                :key="i"
+                class="bi"
+                :class="citaSeleccionada.calificacion >= i ? 'bi-star-fill text-warning' : 'bi-star text-muted'"
+              ></i>
+            </div>
+            <span class="ms-2">({{ citaSeleccionada.calificacion }}/5)</span>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
           <button class="btn btn-outline-secondary" @click="citaSeleccionada = null">
             Cerrar
           </button>
           <button
             class="btn btn-outline-danger"
-            v-if="citaSeleccionada.estado !== 'cancelada'"
+            v-if="citaSeleccionada.estado !== 'cancelada' && !citaSeleccionada.horaAtencion"
             @click="cancelarCita(citaSeleccionada)"
           >
             Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            v-if="citaSeleccionada.horaAtencion && !citaSeleccionada.tieneCalificacion"
+            @click="abrirModalCalificar(citaSeleccionada)"
+          >
+            <i class="bi bi-star me-1"></i>
+            Calificar Atención
           </button>
         </div>
       </div>
@@ -85,17 +126,21 @@
 <script setup>
 import { cancelarCitaPorId } from '@/services/api'
 import { ref } from 'vue'
+import CalificarModal from './CalificarModal.vue'
 
 const props = defineProps({
   citas: { type: Array, required: true },
   loading: { type: Boolean, default: false },
   locale: { type: String, default: 'es-PE' },
-  timeZone: { type: String, default: 'America/Lima' }
+  timeZone: { type: String, default: 'America/Lima' },
+  estudianteId: { type: Number, required: true }
 })
 
-const emit = defineEmits(['select', 'cancel'])
+const emit = defineEmits(['select', 'cancel', 'calificacion-enviada'])
 
 const citaSeleccionada = ref(null)
+const mostrarModalCalificar = ref(false)
+const citaParaCalificar = ref(null)
 
 function onSelect(cita) {
   citaSeleccionada.value = cita
@@ -128,10 +173,10 @@ function capitalizar(s) {
 
 function estadoBadgeClass(estado) {
   switch ((estado || '').toLowerCase().trim()) {
-    case 'confirmada': return 'badge badge-primary-uni'
-    case 'pendiente':  return 'badge badge-warning-uni'
-    case 'cancelada':  return 'badge badge-danger-uni'
-    default:           return 'badge badge-secondary'
+    case 'reservada': return 'badge badge-warning-uni'
+    case 'cancelada': return 'badge badge-danger-uni'
+    case 'atendida': return 'badge bg-success'
+    default:          return 'badge badge-secondary'
   }
 }
 
@@ -150,4 +195,34 @@ async function cancelarCita(cita) {
   }
 }
 
+// Función para abrir el modal de calificación
+function abrirModalCalificar(cita) {
+  citaParaCalificar.value = cita
+  mostrarModalCalificar.value = true
+}
+
+// Función cuando se envía una calificación
+function onCalificacionEnviada(calificacionData) {
+  // Actualizar la cita en la lista para reflejar que ya tiene calificación
+  const cita = props.citas.find(c => c.citaId === calificacionData.citaId)
+  if (cita) {
+    cita.tieneCalificacion = true
+    cita.calificacion = calificacionData.calificacion
+  }
+  
+  // Actualizar también la cita seleccionada si es la misma
+  if (citaSeleccionada.value && citaSeleccionada.value.citaId === calificacionData.citaId) {
+    citaSeleccionada.value.tieneCalificacion = true
+    citaSeleccionada.value.calificacion = calificacionData.calificacion
+  }
+  
+  emit('calificacion-enviada', calificacionData)
+}
+
 </script>
+
+<style scoped>
+.calificacion-mostrada {
+  font-size: 1.2rem;
+}
+</style>

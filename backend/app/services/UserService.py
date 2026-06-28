@@ -15,6 +15,19 @@ def loginUsuario(username: str, password: str):
     return False
 
 
+def loginAdministrador(username: str, password: str):
+    conn = getConnection()
+    cur = conn.cursor()
+    cur.execute("SELECT password FROM administradores WHERE username = %s", (username,))
+    row = cur.fetchone()
+    conn.close()
+
+    # Si existe y coincide la contraseña
+    if row and row[0] == password:
+        return True
+    return False
+
+
 def getUsuario(codigo_estudiante: str):
     conn = getConnection()
     cur = conn.cursor()
@@ -29,8 +42,29 @@ def getUsuario(codigo_estudiante: str):
             "nombres": row[1],
             "apellidos": row[2],
             "correo": row[3],
-            "codEstudiante": row[4]
+            "codEstudiante": row[4],
+            "role": "estudiante"
         }
 
     # If login fails, return None.
+    return None
+
+
+def getAdministrador(username: str):
+    conn = getConnection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, nombres, apellidos, correo, username FROM administradores WHERE username = %s", (username,))
+    row = cur.fetchone()
+    conn.close()
+
+    if row:
+        return {
+            "id": row[0],
+            "nombres": row[1],
+            "apellidos": row[2],
+            "correo": row[3],
+            "username": row[4],
+            "role": "administrador"
+        }
+
     return None

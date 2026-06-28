@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import getConnection
-from app.routers import Auth, CitasRouter, DiasDisponiblesRouter, EspecialidadesRouter, HorariosRouter, MedicosRouter
+from app.routers import Auth, CitasRouter, DiasDisponiblesRouter, EspecialidadesRouter, HorariosRouter, MedicosRouter, KPIRouter, CalificacionRouter
 
 # routers 
 
@@ -19,6 +19,8 @@ app.include_router(EspecialidadesRouter.router)
 app.include_router(MedicosRouter.router)
 app.include_router(DiasDisponiblesRouter.router)
 app.include_router(HorariosRouter.router)
+app.include_router(KPIRouter.router)
+app.include_router(CalificacionRouter.router)
 # Verificando la conexión a la base de datos al iniciar la app
 @app.get("/")
 def root():

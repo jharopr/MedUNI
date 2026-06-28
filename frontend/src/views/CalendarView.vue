@@ -31,7 +31,8 @@ onMounted(async () => {
 
     citas.value = await fetchCitasPorEstudiante(estudianteDatos.value.id);
 
-     diasReservados.value = citas.value.map(cita => dayjs(cita.fecha).date());
+     // Guardar fechas completas (año-mes-día) en lugar de solo el día del mes
+     diasReservados.value = citas.value.map(cita => dayjs(cita.fecha).format('YYYY-MM-DD'));
   } catch (e) {
     error.value = e?.response?.data?.detail || e.message || "Error cargando especialidades";
   } finally {
@@ -50,11 +51,6 @@ const state = reactive({
   cursor: today.startOf("isoweek"),  // inicio de semana (lunes)
   selected: today,
 });
-// FUNCION DEL BOTON PARA IR A LAS ESPECIALIDADES
-function irEspecialidades() {
-  
-  router.push('/especialidades')
-}
 
 function prev()  { state.cursor = state.cursor.subtract(1, state.mode); }
 function next()  { state.cursor = state.cursor.add(1, state.mode); }
@@ -86,11 +82,24 @@ const cells = computed(buildCells);
 function isSameDay(a, b)   { return a.isSame(b, "day"); }
 function isOtherMonth(d)   { return state.mode==="month" && !d.isSame(state.cursor, "month"); }
 function isDayReserved(d) {
-  return diasReservados.value.includes(d.date()) && d.month() === state.cursor.month(); // Verifica que el mes coincida; // Verifica si el día está en la lista de días reservados
+  // Comparar la fecha completa (año-mes-día) para evitar marcar días incorrectos
+  const fechaFormateada = d.format('YYYY-MM-DD');
+  return diasReservados.value.includes(fechaFormateada);
 }
 
 function handleCancelCita(citaId) {
   citas.value = citas.value.filter(c => c.citaId !== citaId)
+  // Actualizar los días reservados después de cancelar
+  diasReservados.value = citas.value.map(cita => dayjs(cita.fecha).format('YYYY-MM-DD'));
+}
+
+function handleCalificacionEnviada(calificacionData) {
+  // Actualizar la cita en la lista para reflejar la calificación
+  const cita = citas.value.find(c => c.citaId === calificacionData.citaId)
+  if (cita) {
+    cita.tieneCalificacion = true
+    cita.calificacion = calificacionData.calificacion
+  }
 }
   
 </script>
@@ -104,7 +113,12 @@ function handleCancelCita(citaId) {
 
       <div class="mb-4">
       <!-- Lista de citas -->
-        <CitasCard :citas="citas" @cancel="handleCancelCita" />
+        <CitasCard 
+          :citas="citas" 
+          :estudianteId="estudianteDatos.id"
+          @cancel="handleCancelCita"
+          @calificacion-enviada="handleCalificacionEnviada"
+        />
       </div>
 
     <!-- Controls -->
@@ -140,13 +154,6 @@ function handleCancelCita(citaId) {
       </div>
     </div>
 
-    <div class="container px-5">
-        <div class="d-flex justify-content-center mt-4 mb-3">
-          <button class="btn btn-primary-uni w-100 fs-4" @click="irEspecialidades">
-            Reservar cita
-          </button>
-        </div>
-    </div>
 
   </div>
 </template>
