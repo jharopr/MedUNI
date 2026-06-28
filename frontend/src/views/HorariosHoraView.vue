@@ -267,7 +267,7 @@ async function confirmarCita() {
     especialidadId: Number(especialidadId),
     fecha: fechaStr,
     hora: slotSeleccionado.value.horaInicio,   
-    estado: citaStore.estado ?? "pendiente",
+    estado: citaStore.estado ?? "reservada",
   };
 
 

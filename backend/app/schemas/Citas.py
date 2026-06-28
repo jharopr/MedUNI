@@ -7,7 +7,7 @@ class CitaCrear(BaseModel):
     especialidadId: int
     fecha: date
     hora: time
-    estado: str # e.g., "pendiente", "confirmada", "cancelada"
+    estado: str # e.g., "reservada", "cancelada"
 
 class CitaCreada(BaseModel):
     citaId: int

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.Citas import CitaCreada, CitaCrear
-from app.services.CitasService import reservarCita, getCitasReservadas, cancelarCita
+from app.services.CitasService import reservarCita, getCitasReservadas, cancelarCita, getHistorialCitasPorEspecialidad
 from typing import List
 
 router = APIRouter(prefix="/citas", tags=["Citas"])
@@ -32,7 +32,7 @@ def mostrarCitas(estudianteId: int):
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="❌ No hay citas confirmadas"
+            detail="❌ No hay citas reservadas"
         )
 
     return data
@@ -42,4 +42,10 @@ async def eliminarCita(citaId: int):
     try:
         return cancelarCita(citaId)
     except HTTPException as e:
-        raise e    
+        raise e
+
+@router.get("/historial/{estudianteId}")
+def historialCitasPorEspecialidad(estudianteId: int):
+    data = getHistorialCitasPorEspecialidad(estudianteId)
+    # Retornar lista vacía si no hay historial en lugar de error
+    return data if data else []    

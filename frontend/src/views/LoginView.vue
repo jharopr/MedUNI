@@ -6,14 +6,25 @@
         <h1>Centro Médico UNI</h1>
       </div>
 
-  <form class="auth-form" @submit.prevent="submit" novalidate>
-        <label for="username">Código de estudiante</label>
+      <div class="auth-type-indicator">
+        <span class="auth-type-badge" :class="{ 'admin': isAdmin }">
+          {{ isAdmin ? '👨‍💼 Administrador' : '👨‍🎓 Estudiante' }}
+        </span>
+        <button type="button" class="back-home-btn" @click="goHome" title="Volver al inicio">
+          ← Volver
+        </button>
+      </div>
+
+      <form class="auth-form" @submit.prevent="submit" novalidate>
+        <label for="username">
+          {{ isAdmin ? 'Usuario' : 'Código de estudiante' }}
+        </label>
         <input
           id="username"
           v-model="username"
           type="text"
-          inputmode="numeric"
-          placeholder="2025xxxxx"
+          :inputmode="isAdmin ? 'text' : 'numeric'"
+          :placeholder="isAdmin ? 'admin' : '2025xxxxx'"
           class="auth-input"
           autocomplete="username"
         />
@@ -28,7 +39,7 @@
           autocomplete="current-password"
         />
 
-        <a href="#" class="auth-forgot">Olvidé mi contraseña</a>
+        <a href="#" class="auth-forgot" v-if="!isAdmin">Olvidé mi contraseña</a>
         <button type="submit" class="auth-btn" :disabled="loading">
           <span v-if="!loading">Acceder</span>
           <span v-else>Accediendo...</span>
@@ -42,28 +53,47 @@
 
 <script setup>
 import logo from "@/assets/logo-uni.png";
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from '../stores/auth';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuth();
 
 const username = ref(''); 
 const password = ref('');
 const loading = ref(false);
 const errorMessage = ref(null);
+const isAdmin = ref(false);
+
+// Determinar el tipo de login desde la query
+onMounted(() => {
+  const tipo = route.query.tipo;
+  if (tipo === 'administrador') {
+    isAdmin.value = true;
+  } else {
+    isAdmin.value = false;
+  }
+});
+
+function goHome() {
+  router.push({ name: 'home' });
+}
 
 async function submit() {
   loading.value = true;
   errorMessage.value = null;
 
   try {
-  await auth.login(username.value, password.value);
-    router.push('/calendario'); 
-
+    await auth.login(username.value, password.value, isAdmin.value ? 'administrador' : 'estudiante');
+    if (isAdmin.value) {
+      router.push('/admin/dashboard');
+    } else {
+      router.push('/calendario');
+    }
   } catch (err) {
-  errorMessage.value = err.message || 'Credenciales inválidas';
+    errorMessage.value = err.message || 'Credenciales inválidas';
   } finally {
     loading.value = false;
   }
@@ -114,4 +144,43 @@ label{ color:#5f6b7a; font-size:clamp(.9rem,.85rem + .3vw,1rem); }
 .auth-btn:hover{ filter:brightness(.95); }
 .auth-btn:disabled{ opacity:.7; cursor:not-allowed; }
 .auth-alert{ margin-top:10px; padding:12px; border-radius:10px; background:#fee2e2; color:#7a0a0a; font-size:.9rem; border:1px solid #f8b4b4; }
+
+.auth-type-indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.auth-type-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #f3f4f6;
+  color: #5f6b7a;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.auth-type-badge.admin {
+  background: #fee2e2;
+  color: #7a0000;
+}
+
+.back-home-btn {
+  background: transparent;
+  border: 1px solid #e4e7ec;
+  color: #5f6b7a;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-home-btn:hover {
+  background: #f3f4f6;
+  border-color: #7a0000;
+  color: #7a0000;
+}
 </style>

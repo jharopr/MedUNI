@@ -1,8 +1,21 @@
 const API_URL = import.meta.env.VITE_API_URL
 const USE_MOCK = !API_URL  // si no hay backend, usa mocks
 
-async function http(path, opts = {}) {
-  const res = await fetch(`${API_URL}${path}`, {
+async function http(path, opts = {}, queryParams = {}) {
+  let url = `${API_URL}${path}`;
+  
+  // Agregar query parameters si existen
+  if (Object.keys(queryParams).length > 0) {
+    const params = new URLSearchParams();
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value);
+      }
+    });
+    url += `?${params.toString()}`;
+  }
+  
+  const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
     ...opts,
   })
@@ -46,10 +59,10 @@ async function http(path, opts = {}) {
 
 
 /* ---------- AUTH ---------- */
-export async function login({ username, password }) {
+export async function login({ username, password, role = 'estudiante' }) {
   return http('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, role }),
   });
 }
 /* ---------- DATOS DEL USUARIO QUE INGRESÓ AL SISTEMA JHARO_BACKEND---------- */
@@ -107,6 +120,67 @@ export async function cancelarCitaPorId(citaId) {
     console.error('Error al cancelar la cita:', e)
     return { message: 'Error al cancelar la cita' }
   }
+}
+
+// HISTORIAL DE CITAS POR ESPECIALIDAD
+export async function fetchHistorialCitasPorEspecialidad(estudianteId) {
+  try {
+    return await http(`/citas/historial/${estudianteId}`)
+  } catch (e) {
+    if (e.message?.toLowerCase?.().includes('no hay historial')) return []
+    return []
+  }
+}
+
+// KPIs PARA ADMINISTRADORES
+export async function fetchAllKPIs() {
+  return http('/kpis/all')
+}
+
+export async function fetchTiempoEsperaPromedio() {
+  return http('/kpis/tiempo-espera-promedio')
+}
+
+export async function fetchTasaAusentismo() {
+  return http('/kpis/tasa-ausentismo')
+}
+
+export async function fetchTasaOcupacionMedica() {
+  return http('/kpis/tasa-ocupacion-medica')
+}
+
+export async function fetchNivelSatisfaccion() {
+  return http('/kpis/nivel-satisfaccion')
+}
+
+export async function fetchTiempoCicloAdmision() {
+  return http('/kpis/tiempo-ciclo-admision')
+}
+
+// CALIFICACIONES
+export async function crearCalificacion(citaId, calificacion, comentario, estudianteId) {
+  return http('/calificaciones/', {
+    method: 'POST',
+    body: JSON.stringify({
+      cita_id: citaId,
+      calificacion: calificacion,
+      comentario: comentario || null
+    }),
+  }, {
+    estudiante_id: estudianteId
+  });
+}
+
+export async function obtenerCalificacionPorCita(citaId) {
+  try {
+    return await http(`/calificaciones/cita/${citaId}`);
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function obtenerCalificacionesPorEstudiante(estudianteId) {
+  return http(`/calificaciones/estudiante/${estudianteId}`);
 }
 
 // OTROS ALEXIS
