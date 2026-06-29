@@ -12,13 +12,18 @@ def getTiempoEsperaPromedio() -> Dict[str, Any]:
     cur = conn.cursor()
     
     cur.execute("""
-        SELECT 
-            AVG(EXTRACT(EPOCH FROM (hora_atencion - hora_cita)) / 60) as tiempo_promedio_minutos,
+        SELECT
+            AVG(
+                EXTRACT(EPOCH FROM (
+                    COALESCE(ra.hora_inicio, c.hora_atencion) - COALESCE(ra.hora_llegada, c.hora_cita)
+                )) / 60
+            ) as tiempo_promedio_minutos,
             COUNT(*) as total_atenciones
-        FROM citas
-        WHERE hora_atencion IS NOT NULL 
-        AND hora_cita IS NOT NULL
-        AND estado = 'atendida'
+        FROM citas c
+        LEFT JOIN registro_atencion ra ON ra.cita_id = c.id
+        WHERE COALESCE(ra.hora_inicio, c.hora_atencion) IS NOT NULL
+        AND COALESCE(ra.hora_llegada, c.hora_cita) IS NOT NULL
+        AND c.estado = 'atendida'
     """)
     
     row = cur.fetchone()
@@ -46,10 +51,10 @@ def getTasaAusentismo() -> Dict[str, Any]:
     
     cur.execute("""
         SELECT 
-            COUNT(*) FILTER (WHERE estado = 'cancelada') as citas_incumplidas,
+            COUNT(*) FILTER (WHERE estado IN ('cancelada', 'no_asistio')) as citas_incumplidas,
             COUNT(*) as total_citas
         FROM citas
-        WHERE estado IN ('reservada', 'cancelada')
+        WHERE estado IN ('reservada', 'cancelada', 'no_asistio')
     """)
     
     row = cur.fetchone()
@@ -92,9 +97,13 @@ def getTasaOcupacionMedica() -> Dict[str, Any]:
     # Horas atendidas (basado en citas atendidas)
     cur.execute("""
         SELECT 
-            COUNT(*) * 0.5 as horas_atendidas
-        FROM citas
-        WHERE estado = 'atendida'
+            COALESCE(
+                SUM(EXTRACT(EPOCH FROM (ra.hora_fin - ra.hora_inicio)) / 3600),
+                COUNT(c.id) * 0.5
+            ) as horas_atendidas
+        FROM citas c
+        LEFT JOIN registro_atencion ra ON ra.cita_id = c.id
+        WHERE c.estado = 'atendida'
     """)
     
     horas_atendidas_row = cur.fetchone()

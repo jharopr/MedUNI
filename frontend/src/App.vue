@@ -34,6 +34,11 @@ const onLogout = async () => {
                 Reservar cita
               </RouterLink>
             </li>
+            <li class="nav-item" v-if="auth.isTopico">
+              <RouterLink class="nav-link text-white" to="/topico/check-in">
+                Check-in
+              </RouterLink>
+            </li>
             <li class="nav-item">
               <button class="btn btn-outline-light btn-sm" @click="onLogout">Salir</button>
             </li>

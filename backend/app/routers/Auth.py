@@ -1,6 +1,13 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.Usuario import UserLogin, AuthenticatedUser
-from app.services.UserService import loginUsuario, getUsuario, loginAdministrador, getAdministrador
+from app.services.UserService import (
+    getAdministrador,
+    getPersonalTopico,
+    getUsuario,
+    loginAdministrador,
+    loginPersonalTopico,
+    loginUsuario,
+)
 import secrets, time
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,6 +29,18 @@ def login(data: UserLogin):
                 "role": "administrador",
                 "userData": admin_data
             }
+    elif role == "topico":
+        ok = loginPersonalTopico(data.username, data.password)
+        if ok:
+            topico_data = getPersonalTopico(data.username)
+            fake_token = secrets.token_hex(16) + ":" + str(int(time.time()))
+            return {
+                "message": "Login exitoso",
+                "user": data.username,
+                "token": fake_token,
+                "role": "topico",
+                "userData": topico_data
+            }
     else:
         ok = loginUsuario(data.username, data.password)
         if ok:
@@ -41,6 +60,8 @@ def login(data: UserLogin):
 def me(username: str, role: str = "estudiante"):
     if role == "administrador":
         user_data = getAdministrador(username)
+    elif role == "topico":
+        user_data = getPersonalTopico(username)
     else:
         user_data = getUsuario(username)
     

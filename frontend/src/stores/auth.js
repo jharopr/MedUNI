@@ -12,7 +12,8 @@ export const useAuth = defineStore('auth', {
   getters: { 
     isAuth: (s) => !!s.token,
     isAdmin: (s) => s.role === 'administrador',
-    isEstudiante: (s) => s.role === 'estudiante'
+    isEstudiante: (s) => s.role === 'estudiante',
+    isTopico: (s) => s.role === 'topico'
   },
   actions: {
     async login(username, password, role = 'estudiante') {
@@ -22,7 +23,7 @@ export const useAuth = defineStore('auth', {
 
         // Acepta { token, user } o { access_token, user }
         const token = resp?.token ?? resp?.access_token
-        const user  = resp?.user ?? null
+        const user  = resp?.userData ?? resp?.user ?? null
         const userRole = resp?.role || role
 
         if (!token) throw new Error('Respuesta de login inválida')

@@ -183,6 +183,36 @@ export async function obtenerCalificacionesPorEstudiante(estudianteId) {
   return http(`/calificaciones/estudiante/${estudianteId}`);
 }
 
+// TOPICO
+export async function fetchCitasTopicoPorEspecialidad(especialidadId, fecha) {
+  const query = fecha ? { fecha } : {}
+  return http(`/citas/topico/especialidad/${especialidadId}`, {}, query)
+}
+
+export async function fetchResumenCitasTopico(fecha) {
+  const query = fecha ? { fecha } : {}
+  return http('/citas/topico/resumen', {}, query)
+}
+
+export async function buscarCitaTopicoPorCodigo(codigo, fecha) {
+  const query = { codigo }
+  if (fecha) query.fecha = fecha
+  return http('/citas/topico/buscar', {}, query)
+}
+
+export async function registrarLlegadaTopico(citaId, usuarioId) {
+  return http('/registro-atencion/llegada', {
+    method: 'POST',
+    body: JSON.stringify({
+      cita_id: citaId,
+      observacion: 'Check-in registrado por personal de topico'
+    }),
+  }, {
+    usuario_id: usuarioId,
+    rol: 'topico'
+  })
+}
+
 // OTROS ALEXIS
 export async function listarHorarios({ especialidad, fecha }) {
   if (USE_MOCK) {

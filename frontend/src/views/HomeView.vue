@@ -9,18 +9,26 @@
 
       <div class="buttons-section">
         <button class="home-btn home-btn-estudiante" @click="goToLogin('estudiante')">
-          <span class="btn-icon">👨‍🎓</span>
+          <span class="btn-icon">E</span>
           <span class="btn-text">
             <strong>Acceso Estudiante</strong>
-            <small>Reserva tus citas médicas</small>
+            <small>Reserva tus citas medicas</small>
           </span>
         </button>
 
         <button class="home-btn home-btn-admin" @click="goToLogin('administrador')">
-          <span class="btn-icon">👨‍💼</span>
+          <span class="btn-icon">A</span>
           <span class="btn-text">
             <strong>Acceso Administrativo</strong>
-            <small>Panel de gestión y KPIs</small>
+            <small>Panel de gestion y KPIs</small>
+          </span>
+        </button>
+
+        <button class="home-btn home-btn-topico" @click="goToLogin('topico')">
+          <span class="btn-icon">T</span>
+          <span class="btn-text">
+            <strong>Personal de topico</strong>
+            <small>Check-in de citas reservadas</small>
           </span>
         </button>
       </div>
@@ -58,7 +66,7 @@ function goToLogin(type) {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
   pointer-events: none;
@@ -133,7 +141,14 @@ function goToLogin(type) {
 }
 
 .btn-icon {
-  font-size: 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: #7a0000;
+  color: #fff;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -157,19 +172,15 @@ function goToLogin(type) {
   font-weight: 400;
 }
 
-.home-btn-estudiante {
+.home-btn-estudiante,
+.home-btn-admin,
+.home-btn-topico {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
 }
 
-.home-btn-estudiante:hover {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-}
-
-.home-btn-admin {
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-}
-
-.home-btn-admin:hover {
+.home-btn-estudiante:hover,
+.home-btn-admin:hover,
+.home-btn-topico:hover {
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
 }
 
@@ -211,10 +222,5 @@ function goToLogin(type) {
   .home-btn {
     padding: 1.25rem 1.5rem;
   }
-
-  .btn-icon {
-    font-size: 2rem;
-  }
 }
 </style>
-

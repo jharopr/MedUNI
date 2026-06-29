@@ -3,43 +3,43 @@
     <section class="auth-card">
       <div class="brand-row justify-content-center">
         <img :src="logo" alt="UNI" class="brand" />
-        <h1>Centro Médico UNI</h1>
+        <h1>Centro Medico UNI</h1>
       </div>
 
       <div class="auth-type-indicator">
-        <span class="auth-type-badge" :class="{ 'admin': isAdmin }">
-          {{ isAdmin ? '👨‍💼 Administrador' : '👨‍🎓 Estudiante' }}
+        <span class="auth-type-badge" :class="{ admin: isAdmin, topico: isTopico }">
+          {{ authLabel }}
         </span>
         <button type="button" class="back-home-btn" @click="goHome" title="Volver al inicio">
-          ← Volver
+          Volver
         </button>
       </div>
 
       <form class="auth-form" @submit.prevent="submit" novalidate>
         <label for="username">
-          {{ isAdmin ? 'Usuario' : 'Código de estudiante' }}
+          {{ isAdmin || isTopico ? 'Usuario' : 'Codigo de estudiante' }}
         </label>
         <input
           id="username"
           v-model="username"
           type="text"
-          :inputmode="isAdmin ? 'text' : 'numeric'"
-          :placeholder="isAdmin ? 'admin' : '2025xxxxx'"
+          :inputmode="isAdmin || isTopico ? 'text' : 'numeric'"
+          :placeholder="isAdmin ? 'admin' : isTopico ? 'topico' : '2025xxxxx'"
           class="auth-input"
           autocomplete="username"
         />
 
-        <label for="password">Contraseña</label>
+        <label for="password">Contrasena</label>
         <input
           id="password"
           v-model="password"
           type="password"
-          placeholder="••••••"
+          placeholder="******"
           class="auth-input"
           autocomplete="current-password"
         />
 
-        <a href="#" class="auth-forgot" v-if="!isAdmin">Olvidé mi contraseña</a>
+        <a href="#" class="auth-forgot" v-if="!isAdmin && !isTopico">Olvide mi contrasena</a>
         <button type="submit" class="auth-btn" :disabled="loading">
           <span v-if="!loading">Acceder</span>
           <span v-else>Accediendo...</span>
@@ -50,10 +50,9 @@
   </main>
 </template>
 
-
 <script setup>
 import logo from "@/assets/logo-uni.png";
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from '../stores/auth';
 
@@ -61,20 +60,23 @@ const router = useRouter();
 const route = useRoute();
 const auth = useAuth();
 
-const username = ref(''); 
+const username = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMessage = ref(null);
 const isAdmin = ref(false);
+const isTopico = ref(false);
 
-// Determinar el tipo de login desde la query
+const authLabel = computed(() => {
+  if (isAdmin.value) return 'Administrador';
+  if (isTopico.value) return 'Personal de topico';
+  return 'Estudiante';
+});
+
 onMounted(() => {
   const tipo = route.query.tipo;
-  if (tipo === 'administrador') {
-    isAdmin.value = true;
-  } else {
-    isAdmin.value = false;
-  }
+  isAdmin.value = tipo === 'administrador';
+  isTopico.value = tipo === 'topico';
 });
 
 function goHome() {
@@ -86,14 +88,18 @@ async function submit() {
   errorMessage.value = null;
 
   try {
-    await auth.login(username.value, password.value, isAdmin.value ? 'administrador' : 'estudiante');
+    const role = isAdmin.value ? 'administrador' : isTopico.value ? 'topico' : 'estudiante';
+    await auth.login(username.value, password.value, role);
+
     if (isAdmin.value) {
       router.push('/admin/dashboard');
+    } else if (isTopico.value) {
+      router.push('/topico/check-in');
     } else {
       router.push('/calendario');
     }
   } catch (err) {
-    errorMessage.value = err.message || 'Credenciales inválidas';
+    errorMessage.value = err.message || 'Credenciales invalidas';
   } finally {
     loading.value = false;
   }
@@ -118,7 +124,6 @@ async function submit() {
 h1{ margin:0; color:#1f2328; font-size:clamp(1.15rem,1rem + 1vw,1.7rem); }
 
 .auth-form{ display:grid; gap:10px; }
-
 
 label{ color:#5f6b7a; font-size:clamp(.9rem,.85rem + .3vw,1rem); }
 .auth-input{
@@ -165,6 +170,11 @@ label{ color:#5f6b7a; font-size:clamp(.9rem,.85rem + .3vw,1rem); }
 .auth-type-badge.admin {
   background: #fee2e2;
   color: #7a0000;
+}
+
+.auth-type-badge.topico {
+  background: #e0f2fe;
+  color: #075985;
 }
 
 .back-home-btn {

@@ -8,7 +8,10 @@ CREATE TABLE estudiantes (
     apellidos VARCHAR(100) NOT NULL,
     correo VARCHAR(100) UNIQUE NOT NULL,
     codigo_estudiante VARCHAR(100) UNIQUE NOT NULL,
-    codigo_dirce VARCHAR(100) NOT NULL
+    codigo_dirce VARCHAR(100) NOT NULL,
+    estado BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE especialidades (
@@ -22,7 +25,10 @@ CREATE TABLE medicos (
     nombres VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100) NOT NULL,
     correo VARCHAR(100) UNIQUE NOT NULL,
-    especialidad_id INT NOT NULL REFERENCES especialidades(id)
+    especialidad_id INT NOT NULL REFERENCES especialidades(id),
+    estado BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE citas (
@@ -31,13 +37,18 @@ CREATE TABLE citas (
     medico_id INT NOT NULL REFERENCES medicos(id),
     fecha DATE NOT NULL,
     hora TIME NOT NULL,
-    estado VARCHAR(20) DEFAULT 'reservada', -- reservada, cancelada, atendida
+    estado VARCHAR(20) DEFAULT 'reservada' CHECK (estado IN ('reservada', 'cancelada', 'atendida', 'no_asistio')),
     especialidad_id INT NOT NULL REFERENCES especialidades(id),
     hora_cita TIMESTAMP, -- Timestamp de cuando se programó la cita
     hora_atencion TIMESTAMP, -- Timestamp de cuando se atendió realmente
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Para calcular tiempo de ciclo de admisión
-    reserva_confirmada_at TIMESTAMP -- Para calcular tiempo de ciclo de admisión
+    reserva_confirmada_at TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX uq_cita_medico_horario_reservada
+ON citas (medico_id, fecha, hora)
+WHERE estado = 'reservada';
 
 CREATE TABLE disponibilidad_especialidad (
     id SERIAL PRIMARY KEY,
@@ -68,15 +79,54 @@ CREATE TABLE administradores (
     apellidos VARCHAR(100) NOT NULL,
     correo VARCHAR(100) UNIQUE NOT NULL,
     username VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(100) NOT NULL
+    password VARCHAR(100) NOT NULL,
+    estado BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE personal_topico (
+    id SERIAL PRIMARY KEY,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    correo VARCHAR(100) UNIQUE NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    estado BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE calificaciones (
     id SERIAL PRIMARY KEY,
-    cita_id INT NOT NULL REFERENCES citas(id),
+    cita_id INT NOT NULL UNIQUE REFERENCES citas(id),
     calificacion INT NOT NULL CHECK (calificacion >= 1 AND calificacion <= 5),
     comentario TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE registro_atencion (
+    id SERIAL PRIMARY KEY,
+    cita_id INT NOT NULL UNIQUE REFERENCES citas(id),
+    hora_llegada TIMESTAMP,
+    hora_triaje TIMESTAMP,
+    hora_inicio TIMESTAMP,
+    hora_fin TIMESTAMP,
+    estado_atencion VARCHAR(30) DEFAULT 'en_espera' CHECK (estado_atencion IN ('en_espera', 'en_triaje', 'en_atencion', 'finalizada', 'no_asistio')),
+    observacion TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE auditoria (
+    id SERIAL PRIMARY KEY,
+    usuario_id INT,
+    rol VARCHAR(30),
+    accion VARCHAR(100) NOT NULL,
+    entidad VARCHAR(100) NOT NULL,
+    entidad_id INT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    detalle TEXT
 );
 
 -- =======================
@@ -251,6 +301,10 @@ INSERT INTO administradores (nombres, apellidos, correo, username, password)
 VALUES 
 ('Admin', 'Principal', 'admin@uni.pe', 'admin', 'admin123'),
 ('Administrador', 'Sistema', 'admin.sistema@uni.pe', 'admin_sistema', 'admin123');
+
+INSERT INTO personal_topico (nombres, apellidos, correo, username, password)
+VALUES
+('Personal', 'Topico', 'topico@uni.pe', 'topico', 'topico123');
 
 -- =======================
 -- DATOS FICTICIOS PARA HISTORIAL Y KPIs
@@ -491,3 +545,21 @@ SET estado = 'atendida'
 WHERE hora_atencion IS NOT NULL 
 AND estado = 'reservada'
 AND fecha < CURRENT_DATE;
+
+INSERT INTO registro_atencion (
+    cita_id,
+    hora_llegada,
+    hora_inicio,
+    hora_fin,
+    estado_atencion,
+    observacion
+)
+SELECT
+    id,
+    hora_cita,
+    hora_atencion,
+    hora_atencion + interval '15 minutes',
+    'finalizada',
+    'Registro generado desde datos historicos de citas'
+FROM citas
+WHERE hora_atencion IS NOT NULL;
