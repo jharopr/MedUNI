@@ -4,6 +4,7 @@ from app.db import getConnection
 from app.routers import Auth, CitasRouter, DiasDisponiblesRouter, DoctorRouter, EspecialidadesRouter, HorariosRouter, MedicosRouter, KPIRouter, CalificacionRouter, RegistroAtencionRouter, AuditoriaRouter
 import os
 # routers 
+app = FastAPI()
 
 origins = [
     "http://localhost:5173",
