@@ -8,12 +8,13 @@
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import {
   Chart,
+  DoughnutController,
   ArcElement,
   Tooltip,
   Legend
 } from 'chart.js'
 
-Chart.register(ArcElement, Tooltip, Legend)
+Chart.register(DoughnutController, ArcElement, Tooltip, Legend)
 
 const props = defineProps({
   valor: {
@@ -107,4 +108,3 @@ onBeforeUnmount(() => {
   margin-top: 1rem;
 }
 </style>
-

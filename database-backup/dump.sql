@@ -206,6 +206,35 @@ VALUES
 (15, '2025-12-01', '2025-12-31', '08:00', '14:00', 5);
 
 
+DELETE FROM disponibilidad_especialidad
+WHERE especialidad_id IN (7, 9, 13)
+  AND fecha_inicio = DATE '2026-06-28'
+  AND fecha_fin = DATE '2026-07-01';
+
+INSERT INTO disponibilidad_especialidad (
+    especialidad_id,
+    fecha_inicio,
+    fecha_fin,
+    hora_inicio,
+    hora_fin,
+    dia_semana,
+    disponibilidad,
+    duracion_turno
+)
+SELECT
+    especialidad_id,
+    DATE '2026-06-28',
+    DATE '2026-07-01',
+    TIME '08:00',
+    TIME '20:00',
+    dia_semana,
+    true,
+    30
+FROM (
+    VALUES (7), (9), (13)
+) AS especialidades(especialidad_id)
+CROSS JOIN generate_series(1, 7) AS dias(dia_semana);
+
 -- Médicos (SIN CAMBIOS)
 INSERT INTO medicos (nombres, apellidos, correo, especialidad_id)
 VALUES

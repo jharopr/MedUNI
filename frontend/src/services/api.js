@@ -157,6 +157,17 @@ export async function fetchTiempoCicloAdmision() {
   return http('/kpis/tiempo-ciclo-admision')
 }
 
+// AUDITORIA
+export async function fetchHistorialAuditoria(filtros = {}) {
+  const query = {}
+  if (filtros.rol && filtros.rol !== 'todos') query.rol = filtros.rol
+  if (filtros.accion) query.accion = filtros.accion
+  if (filtros.fechaDesde) query.fecha_desde = filtros.fechaDesde
+  if (filtros.fechaHasta) query.fecha_hasta = filtros.fechaHasta
+  if (filtros.limit) query.limit = filtros.limit
+  return http('/auditoria/historial', {}, query)
+}
+
 // CALIFICACIONES
 export async function crearCalificacion(citaId, calificacion, comentario, estudianteId) {
   return http('/calificaciones/', {

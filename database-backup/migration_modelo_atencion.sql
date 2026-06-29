@@ -74,6 +74,35 @@ INSERT INTO personal_topico (nombres, apellidos, correo, username, password)
 VALUES ('Personal', 'Topico', 'topico@uni.pe', 'topico', 'topico123')
 ON CONFLICT (username) DO NOTHING;
 
+DELETE FROM disponibilidad_especialidad
+WHERE especialidad_id IN (7, 9, 13)
+  AND fecha_inicio = DATE '2026-06-28'
+  AND fecha_fin = DATE '2026-07-01';
+
+INSERT INTO disponibilidad_especialidad (
+    especialidad_id,
+    fecha_inicio,
+    fecha_fin,
+    hora_inicio,
+    hora_fin,
+    dia_semana,
+    disponibilidad,
+    duracion_turno
+)
+SELECT
+    especialidad_id,
+    DATE '2026-06-28',
+    DATE '2026-07-01',
+    TIME '08:00',
+    TIME '20:00',
+    dia_semana,
+    true,
+    30
+FROM (
+    VALUES (7), (9), (13)
+) AS especialidades(especialidad_id)
+CROSS JOIN generate_series(1, 7) AS dias(dia_semana);
+
 CREATE UNIQUE INDEX IF NOT EXISTS uq_calificaciones_cita
 ON calificaciones (cita_id);
 

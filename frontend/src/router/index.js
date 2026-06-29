@@ -11,6 +11,7 @@ import TopicoCheckInView from '@/views/TopicoCheckInView.vue'
 import MedicoCitasView from '@/views/MedicoCitasView.vue'
 // ESPECIALIDADES
 import EspecialidadesView from '../views/EspecialidadesView.vue'
+import AdminAuditoriaView from '../views/AdminAuditoriaView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,7 @@ const router = createRouter({
     { path: '/horarios/:selectedDate',name: 'horarios', component: HorariosHoraView, meta: { requiresAuth: true, requiresEstudiante: true } },
     // ADMIN ROUTES
     { path: '/admin/dashboard', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAuth: true, requiresAdmin: true } },
+    { path: '/admin/auditoria', name: 'admin-auditoria', component: AdminAuditoriaView, meta: { requiresAuth: true, requiresAdmin: true } },
     // TOPICO ROUTES
     { path: '/topico/check-in', name: 'topico-check-in', component: TopicoCheckInView, meta: { requiresAuth: true, requiresTopico: true } },
     // MEDICO ROUTES
@@ -58,9 +60,10 @@ router.beforeEach((to) => {
 
   // Verificar rol para rutas de admin
   if (to.meta.requiresAdmin && role !== 'administrador') {
-    if (role === 'topico') return { name: 'topico-check-in' }
-    if (role === 'medico') return { name: 'medico-citas' }
-    return { name: 'calendar' }
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('role')
+    return { name: 'login', query: { tipo: 'administrador' } }
   }
 
   // Verificar rol para rutas de topico

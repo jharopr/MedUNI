@@ -8,6 +8,7 @@
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import {
   Chart,
+  BarController,
   CategoryScale,
   LinearScale,
   BarElement,
@@ -17,6 +18,7 @@ import {
 } from 'chart.js'
 
 Chart.register(
+  BarController,
   CategoryScale,
   LinearScale,
   BarElement,
@@ -143,4 +145,3 @@ onBeforeUnmount(() => {
   margin-top: 1rem;
 }
 </style>
-

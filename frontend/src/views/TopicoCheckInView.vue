@@ -45,12 +45,38 @@
       <template #header="{ close }">
         <div class="modal-heading">
           <div>
-            <h2>Confirmar hora de llegada</h2>
-            <p>La hora se registrara automaticamente con la hora actual.</p>
+            <h2>{{ citasPendientes.length > 1 ? 'Seleccionar cita' : 'Confirmar hora de llegada' }}</h2>
+            <p>
+              {{
+                citasPendientes.length > 1
+                  ? 'El estudiante tiene mas de una cita pendiente en esta fecha.'
+                  : 'La hora se registrara automaticamente con la hora actual.'
+              }}
+            </p>
           </div>
           <button class="btn-close" type="button" aria-label="Cerrar" @click="close">x</button>
         </div>
       </template>
+
+      <div v-if="citasPendientes.length > 1" class="appointment-picker">
+        <p class="picker-title">Elija la cita a la que llego el estudiante:</p>
+        <button
+          v-for="cita in citasPendientes"
+          :key="cita.citaId"
+          type="button"
+          class="appointment-option"
+          :class="{ 'appointment-option--selected': citaSeleccionada?.citaId === cita.citaId }"
+          @click="seleccionarCita(cita)"
+        >
+          <span class="appointment-specialty">{{ cita.especialidadNombre }}</span>
+          <span class="appointment-time">
+            {{ formatHora(cita.horaInicio) }} - {{ formatHora(cita.horaFin) }}
+          </span>
+          <span class="appointment-meta">
+            {{ cita.nombreMedico }}
+          </span>
+        </button>
+      </div>
 
       <div v-if="citaSeleccionada" class="modal-content-body">
         <dl>
@@ -79,7 +105,7 @@
 
       <template #footer="{ close }">
         <button class="btn btn-outline-secondary" type="button" @click="close">Cancelar</button>
-        <button class="btn btn-primary" type="button" :disabled="registrando" @click="confirmarLlegada">
+        <button class="btn btn-primary" type="button" :disabled="registrando || !citaSeleccionada" @click="confirmarLlegada">
           {{ registrando ? 'Registrando...' : 'Confirmar llegada' }}
         </button>
       </template>
@@ -103,6 +129,7 @@ const fecha = ref(new Date().toISOString().slice(0, 10))
 const resumen = ref([])
 const codigoBusqueda = ref('')
 const citaSeleccionada = ref(null)
+const citasPendientes = ref([])
 const modalOpen = ref(false)
 const buscando = ref(false)
 const registrando = ref(false)
@@ -131,28 +158,34 @@ async function buscarPorCodigo() {
   error.value = ''
   success.value = ''
   citaSeleccionada.value = null
+  citasPendientes.value = []
 
   try {
     const resultados = await buscarCitaTopicoPorCodigo(codigoBusqueda.value, fecha.value)
-    const pendiente = resultados.find((cita) => !cita.registradaLlegada)
+    const pendientes = resultados.filter((cita) => !cita.registradaLlegada)
 
     if (!resultados.length) {
       error.value = 'No se encontro una cita reservada para ese codigo en la fecha seleccionada.'
       return
     }
 
-    if (!pendiente) {
-      error.value = 'La cita de este estudiante ya tiene hora de llegada registrada.'
+    if (!pendientes.length) {
+      error.value = 'Todas las citas de este estudiante en la fecha seleccionada ya tienen hora de llegada registrada.'
       return
     }
 
-    citaSeleccionada.value = pendiente
+    citasPendientes.value = pendientes
+    citaSeleccionada.value = pendientes.length === 1 ? pendientes[0] : null
     modalOpen.value = true
   } catch (e) {
     error.value = e.message || 'No se pudo buscar la cita'
   } finally {
     buscando.value = false
   }
+}
+
+function seleccionarCita(cita) {
+  citaSeleccionada.value = cita
 }
 
 async function confirmarLlegada() {
@@ -168,6 +201,7 @@ async function confirmarLlegada() {
     modalOpen.value = false
     codigoBusqueda.value = ''
     citaSeleccionada.value = null
+    citasPendientes.value = []
     await cargarResumen()
   } catch (e) {
     error.value = e.message || 'No se pudo registrar la llegada'
@@ -271,6 +305,58 @@ function formatFecha(value) {
   display: grid;
   gap: 10px;
   margin: 0;
+}
+
+.appointment-picker {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.picker-title {
+  margin: 0;
+  color: #344054;
+  font-weight: 700;
+}
+
+.appointment-option {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  text-align: left;
+  cursor: pointer;
+}
+
+.appointment-option:hover {
+  border-color: #b42318;
+  background: #fff7f7;
+}
+
+.appointment-option--selected {
+  border-color: #990000;
+  background: #fff1f1;
+  box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.12);
+}
+
+.appointment-specialty {
+  font-weight: 800;
+}
+
+.appointment-time {
+  color: #990000;
+  font-weight: 800;
+}
+
+.appointment-meta {
+  grid-column: 1 / -1;
+  color: #667085;
+  font-size: 0.92rem;
 }
 
 .modal-content-body dl > div {
