@@ -2,15 +2,28 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import getConnection
 from app.routers import Auth, CitasRouter, DiasDisponiblesRouter, DoctorRouter, EspecialidadesRouter, HorariosRouter, MedicosRouter, KPIRouter, CalificacionRouter, RegistroAtencionRouter, AuditoriaRouter
-
+import os
 # routers 
 
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
-app = FastAPI()
+production_origin = os.getenv("CORS_ORIGINS")
+if production_origin:
+    origins.extend(
+        origin.strip()
+        for origin in production_origin.split(",")
+        if origin.strip()
+    )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173","http://127.0.0.1:5173"], # DOMINIO DEL FRONTEND
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 # routers 
 app.include_router(Auth.router)
