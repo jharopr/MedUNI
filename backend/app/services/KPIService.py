@@ -83,42 +83,68 @@ def getTasaOcupacionMedica() -> Dict[str, Any]:
     conn = getConnection()
     cur = conn.cursor()
     
-    # Horas programadas (basado en horarios de médicos)
     cur.execute("""
-        SELECT 
-            SUM(EXTRACT(EPOCH FROM (hora_fin - hora_inicio)) / 3600) as horas_programadas
-        FROM horario_medico
-        WHERE fecha_fin >= CURRENT_DATE
+        SELECT
+            DATE_TRUNC('week', CURRENT_DATE)::date as semana_inicio,
+            (DATE_TRUNC('week', CURRENT_DATE)::date + INTERVAL '6 days')::date as semana_fin
     """)
-    
-    horas_programadas_row = cur.fetchone()
-    horas_programadas = float(horas_programadas_row[0]) if horas_programadas_row[0] else 0
-    
-    # Horas atendidas (basado en citas atendidas)
+    semana_inicio, semana_fin = cur.fetchone()
+
+    # Cupos ofertados semanales basados en horario_medico.
+    # Cada regla del medico se expande a los dias reales de la semana actual.
+    # La duracion del turno sale de la disponibilidad activa de su especialidad.
     cur.execute("""
         SELECT 
-            COALESCE(
-                SUM(EXTRACT(EPOCH FROM (ra.hora_fin - ra.hora_inicio)) / 3600),
-                COUNT(c.id) * 0.5
-            ) as horas_atendidas
+            COALESCE(SUM(
+                FLOOR(
+                    EXTRACT(EPOCH FROM (hm.hora_fin - hm.hora_inicio)) / 60
+                    / NULLIF(COALESCE(de.duracion_turno, 30), 0)
+                )
+            ), 0) as cupos_ofertados
+        FROM horario_medico hm
+        JOIN medicos m ON m.id = hm.medico_id
+        JOIN LATERAL generate_series(
+            GREATEST(hm.fecha_inicio, %s::date),
+            LEAST(hm.fecha_fin, %s::date),
+            interval '1 day'
+        ) AS dias(fecha) ON true
+        JOIN disponibilidad_especialidad de
+          ON de.especialidad_id = m.especialidad_id
+         AND dias.fecha::date BETWEEN de.fecha_inicio AND de.fecha_fin
+         AND EXTRACT(ISODOW FROM dias.fecha)::int = de.dia_semana
+         AND de.disponibilidad = true
+        WHERE hm.fecha_inicio <= %s::date
+          AND hm.fecha_fin >= %s::date
+          AND EXTRACT(ISODOW FROM dias.fecha)::int = hm.dia_semana
+    """, (semana_inicio, semana_fin, semana_fin, semana_inicio))
+    
+    cupos_ofertados_row = cur.fetchone()
+    cupos_ofertados = int(cupos_ofertados_row[0]) if cupos_ofertados_row[0] else 0
+    
+    # Citas atendidas de la misma semana.
+    cur.execute("""
+        SELECT 
+            COUNT(c.id) as citas_atendidas
         FROM citas c
-        LEFT JOIN registro_atencion ra ON ra.cita_id = c.id
         WHERE c.estado = 'atendida'
-    """)
+          AND c.fecha BETWEEN %s::date AND %s::date
+    """, (semana_inicio, semana_fin))
     
-    horas_atendidas_row = cur.fetchone()
-    horas_atendidas = float(horas_atendidas_row[0]) if horas_atendidas_row[0] else 0
+    citas_atendidas_row = cur.fetchone()
+    citas_atendidas = int(citas_atendidas_row[0]) if citas_atendidas_row[0] else 0
     
     conn.close()
     
-    tasa = (horas_atendidas / horas_programadas * 100) if horas_programadas > 0 else 0
+    tasa = (citas_atendidas / cupos_ofertados * 100) if cupos_ofertados > 0 else 0
     
     return {
         "valor": round(tasa, 2),
-        "horas_atendidas": round(horas_atendidas, 2),
-        "horas_programadas": round(horas_programadas, 2),
+        "citas_atendidas": citas_atendidas,
+        "cupos_ofertados": cupos_ofertados,
+        "semana_inicio": semana_inicio.isoformat(),
+        "semana_fin": semana_fin.isoformat(),
         "meta": 85,
-        "cumple_meta": tasa > 85 if horas_programadas > 0 else None,
+        "cumple_meta": tasa > 85 if cupos_ofertados > 0 else None,
         "unidad": "porcentaje"
     }
 

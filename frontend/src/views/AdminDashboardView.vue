@@ -144,7 +144,7 @@ function getDetalle(key, value) {
     case 'tasa_ausentismo':
       return `Citas incumplidas: ${value.citas_incumplidas} de ${value.total_citas}`
     case 'tasa_ocupacion_medica':
-      return `Horas atendidas: ${value.horas_atendidas.toFixed(1)}h / ${value.horas_programadas.toFixed(1)}h`
+      return `Semana ${formatFecha(value.semana_inicio)} - ${formatFecha(value.semana_fin)}: ${value.citas_atendidas} citas atendidas / ${value.cupos_ofertados} cupos`
     case 'nivel_satisfaccion':
       return `Total calificaciones: ${value.total_calificaciones}`
     case 'tiempo_ciclo_admision':
@@ -152,6 +152,14 @@ function getDetalle(key, value) {
     default:
       return null
   }
+}
+
+function formatFecha(value) {
+  if (!value) return ''
+  return new Date(`${value}T00:00:00`).toLocaleDateString('es-PE', {
+    day: '2-digit',
+    month: '2-digit',
+  })
 }
 
 onMounted(() => {
@@ -300,4 +308,3 @@ onMounted(() => {
   gap: 1.5rem;
 }
 </style>
-
