@@ -6,6 +6,6 @@ from app.services.EspecialidadesService import listarEspecialidades
 router = APIRouter(prefix="/especialidades", tags=["Especialidades"])
 
 
-@router.get("/", response_model=List[Especialidad])
+@router.get("", response_model=List[Especialidad])
 def getEspecialidades():
     return listarEspecialidades()
