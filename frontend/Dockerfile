@@ -1,14 +1,29 @@
-# frontend/Dockerfile
+# Etapa 1: construir Vue/Vite
+FROM node:20-slim AS build
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci
+
+COPY . .
+
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
+RUN npm run build
+
+
+# Etapa 2: servir el build
 FROM node:20-slim
 
 WORKDIR /app
 
-# Copiamos solo package.json para instalar deps una vez
-COPY ./package*.json ./
+RUN npm install -g serve
 
-RUN npm ci
+COPY --from=build /app/dist ./dist
 
-# Montaremos el código con volumes desde docker-compose
-EXPOSE 5173
+EXPOSE 3000
 
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-3000}"]
