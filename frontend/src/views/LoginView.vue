@@ -114,7 +114,8 @@ async function submit() {
 <style scoped>
 .auth{
   min-height:100svh; display:grid; place-items:center;
-  padding:clamp(16px,4vw,32px); background:#f6f7f9;
+  padding:clamp(16px,4vw,32px);
+  background: linear-gradient(135deg, #7a0000 0%, #9d0000 50%, #7a0000 100%);
 }
 
 .auth-card{

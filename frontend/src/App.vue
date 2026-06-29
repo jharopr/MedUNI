@@ -1,10 +1,12 @@
 <script setup>
+import { computed } from 'vue'
 import { useAuth } from './stores/auth'
 import { useRoute, useRouter } from 'vue-router'
 const auth = useAuth()
 const route = useRoute()
 const router = useRouter()
 import logoBlanco from "@/assets/logo-uni-blanco.png";
+const isFullBleedRoute = computed(() => route.path === '/' || route.path === '/login')
 const onLogout = async () => {
   await auth.logout()
   router.replace({ name: 'home' })
@@ -52,12 +54,24 @@ const onLogout = async () => {
       </div>
     </div>
   </nav>
-  <main class="container py-4"><RouterView /></main>
+  <main :class="isFullBleedRoute ? 'app-main app-main--full' : 'container py-4'">
+    <RouterView />
+  </main>
 </template>
 
 <style scoped>
 .nav-primary{ background: #7b0000; }
 .brand-img{ height:48px; width:auto; }
+
+.app-main {
+  min-height: 100vh;
+}
+
+.app-main--full {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
 
 .nav-link {
   color: rgba(255, 255, 255, 0.9) !important;

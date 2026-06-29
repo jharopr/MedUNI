@@ -569,3 +569,60 @@ SELECT
     'Registro generado desde datos historicos de citas'
 FROM citas
 WHERE hora_atencion IS NOT NULL;
+
+INSERT INTO estudiantes (nombres, apellidos, correo, codigo_estudiante, codigo_dirce)
+VALUES
+('Sofia', 'Prueba Dental', 'sofia.dental@uni.pe', 'TESTODON01', '111111'),
+('Mateo', 'Prueba Nutricion', 'mateo.nutricion@uni.pe', 'TESTNUTRI01', '111111'),
+('Valeria', 'Prueba Oftalmologia', 'valeria.oftalmo@uni.pe', 'TESTOFTA01', '111111')
+ON CONFLICT (codigo_estudiante) DO NOTHING;
+
+WITH agenda(codigo_estudiante, medico_correo, fecha, hora, especialidad_id) AS (
+    VALUES
+    ('20234044I', 'beatriz.flores@correo.com', DATE '2026-06-29', TIME '10:00', 7),
+    ('20244017D', 'beatriz.flores@correo.com', DATE '2026-06-29', TIME '10:30', 7),
+    ('20234044I', 'beatriz.flores@correo.com', DATE '2026-06-30', TIME '10:00', 7),
+    ('20234044I', 'beatriz.flores@correo.com', DATE '2026-06-30', TIME '10:30', 7),
+    ('20240010E', 'beatriz.flores@correo.com', DATE '2026-06-30', TIME '11:00', 7),
+    ('20234044I', 'beatriz.flores@correo.com', DATE '2026-07-01', TIME '10:00', 7),
+    ('TESTODON01', 'andrea.martinez@correo.com', DATE '2026-06-29', TIME '09:00', 9),
+    ('TESTODON01', 'andrea.martinez@correo.com', DATE '2026-06-30', TIME '09:00', 9),
+    ('TESTNUTRI01', 'valeria.garcia@correo.com', DATE '2026-06-30', TIME '08:30', 14),
+    ('TESTNUTRI01', 'valeria.garcia@correo.com', DATE '2026-07-01', TIME '09:00', 14),
+    ('TESTOFTA01', 'laura.sanchez@correo.com', DATE '2026-06-29', TIME '10:30', 5),
+    ('TESTOFTA01', 'laura.sanchez@correo.com', DATE '2026-07-01', TIME '10:00', 5)
+)
+INSERT INTO citas (
+    estudiante_id,
+    medico_id,
+    fecha,
+    hora,
+    estado,
+    especialidad_id,
+    hora_cita,
+    created_at,
+    reserva_confirmada_at,
+    updated_at
+)
+SELECT
+    e.id,
+    m.id,
+    a.fecha,
+    a.hora,
+    'reservada',
+    a.especialidad_id,
+    a.fecha + a.hora,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+FROM agenda a
+JOIN estudiantes e ON e.codigo_estudiante = a.codigo_estudiante
+JOIN medicos m ON m.correo = a.medico_correo
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM citas c
+    WHERE c.medico_id = m.id
+      AND c.fecha = a.fecha
+      AND c.hora = a.hora
+      AND c.estado = 'reservada'
+);
