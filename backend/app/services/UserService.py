@@ -40,6 +40,18 @@ def loginPersonalTopico(username: str, password: str):
     return False
 
 
+def loginMedico(username: str, password: str):
+    conn = getConnection()
+    cur = conn.cursor()
+    cur.execute("SELECT password FROM medicos WHERE username = %s AND estado = true", (username,))
+    row = cur.fetchone()
+    conn.close()
+
+    if row and row[0] == password:
+        return True
+    return False
+
+
 def getUsuario(codigo_estudiante: str):
     conn = getConnection()
     cur = conn.cursor()
@@ -97,6 +109,37 @@ def getPersonalTopico(username: str):
             "correo": row[3],
             "username": row[4],
             "role": "topico"
+        }
+
+    return None
+
+
+def getMedicoUsuario(username: str):
+    conn = getConnection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT m.id, m.nombres, m.apellidos, m.correo, m.username,
+               m.especialidad_id, e.nombre
+        FROM medicos m
+        JOIN especialidades e ON e.id = m.especialidad_id
+        WHERE m.username = %s AND m.estado = true
+        """,
+        (username,),
+    )
+    row = cur.fetchone()
+    conn.close()
+
+    if row:
+        return {
+            "id": row[0],
+            "nombres": row[1],
+            "apellidos": row[2],
+            "correo": row[3],
+            "username": row[4],
+            "especialidadId": row[5],
+            "especialidadNombre": row[6],
+            "role": "medico"
         }
 
     return None

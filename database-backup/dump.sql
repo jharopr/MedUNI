@@ -26,6 +26,8 @@ CREATE TABLE medicos (
     apellidos VARCHAR(100) NOT NULL,
     correo VARCHAR(100) UNIQUE NOT NULL,
     especialidad_id INT NOT NULL REFERENCES especialidades(id),
+    username VARCHAR(100) UNIQUE,
+    password VARCHAR(100),
     estado BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -301,6 +303,10 @@ INSERT INTO administradores (nombres, apellidos, correo, username, password)
 VALUES 
 ('Admin', 'Principal', 'admin@uni.pe', 'admin', 'admin123'),
 ('Administrador', 'Sistema', 'admin.sistema@uni.pe', 'admin_sistema', 'admin123');
+
+UPDATE medicos
+SET username = 'beatriz', password = 'medico123'
+WHERE correo = 'beatriz.flores@correo.com';
 
 INSERT INTO personal_topico (nombres, apellidos, correo, username, password)
 VALUES

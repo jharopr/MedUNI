@@ -2,9 +2,11 @@ from fastapi import APIRouter, HTTPException, status
 from app.schemas.Usuario import UserLogin, AuthenticatedUser
 from app.services.UserService import (
     getAdministrador,
+    getMedicoUsuario,
     getPersonalTopico,
     getUsuario,
     loginAdministrador,
+    loginMedico,
     loginPersonalTopico,
     loginUsuario,
 )
@@ -41,6 +43,18 @@ def login(data: UserLogin):
                 "role": "topico",
                 "userData": topico_data
             }
+    elif role == "medico":
+        ok = loginMedico(data.username, data.password)
+        if ok:
+            medico_data = getMedicoUsuario(data.username)
+            fake_token = secrets.token_hex(16) + ":" + str(int(time.time()))
+            return {
+                "message": "Login exitoso",
+                "user": data.username,
+                "token": fake_token,
+                "role": "medico",
+                "userData": medico_data
+            }
     else:
         ok = loginUsuario(data.username, data.password)
         if ok:
@@ -62,6 +76,8 @@ def me(username: str, role: str = "estudiante"):
         user_data = getAdministrador(username)
     elif role == "topico":
         user_data = getPersonalTopico(username)
+    elif role == "medico":
+        user_data = getMedicoUsuario(username)
     else:
         user_data = getUsuario(username)
     
@@ -73,6 +89,8 @@ def me(username: str, role: str = "estudiante"):
             "correo": user_data["correo"],
             "codEstudiante": user_data.get("codEstudiante"),
             "username": user_data.get("username"),
+            "especialidadId": user_data.get("especialidadId"),
+            "especialidadNombre": user_data.get("especialidadNombre"),
             "role": user_data.get("role", role)
         }
     

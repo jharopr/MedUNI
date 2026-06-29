@@ -6,7 +6,14 @@ ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE medicos
 ADD COLUMN IF NOT EXISTS estado BOOLEAN DEFAULT true,
 ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN IF NOT EXISTS username VARCHAR(100) UNIQUE,
+ADD COLUMN IF NOT EXISTS password VARCHAR(100);
+
+UPDATE medicos
+SET username = 'beatriz', password = 'medico123'
+WHERE correo = 'beatriz.flores@correo.com'
+  AND username IS NULL;
 
 ALTER TABLE administradores
 ADD COLUMN IF NOT EXISTS estado BOOLEAN DEFAULT true,
@@ -88,3 +95,37 @@ SELECT
 FROM citas
 WHERE hora_atencion IS NOT NULL
 ON CONFLICT (cita_id) DO NOTHING;
+
+INSERT INTO citas (
+    estudiante_id,
+    medico_id,
+    fecha,
+    hora,
+    estado,
+    especialidad_id,
+    hora_cita,
+    created_at,
+    reserva_confirmada_at,
+    updated_at
+)
+SELECT
+    1,
+    m.id,
+    CURRENT_DATE,
+    '10:00',
+    'reservada',
+    m.especialidad_id,
+    CURRENT_DATE + time '10:00',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+FROM medicos m
+WHERE m.username = 'beatriz'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM citas c
+      WHERE c.medico_id = m.id
+        AND c.fecha = CURRENT_DATE
+        AND c.hora = '10:00'
+        AND c.estado = 'reservada'
+  );

@@ -31,6 +31,14 @@
             <small>Check-in de citas reservadas</small>
           </span>
         </button>
+
+        <button class="home-btn home-btn-medico" @click="goToLogin('medico')">
+          <span class="btn-icon">M</span>
+          <span class="btn-text">
+            <strong>Acceso Medico</strong>
+            <small>Gestion de pacientes del dia</small>
+          </span>
+        </button>
       </div>
     </div>
   </div>
@@ -174,13 +182,15 @@ function goToLogin(type) {
 
 .home-btn-estudiante,
 .home-btn-admin,
-.home-btn-topico {
+.home-btn-topico,
+.home-btn-medico {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
 }
 
 .home-btn-estudiante:hover,
 .home-btn-admin:hover,
-.home-btn-topico:hover {
+.home-btn-topico:hover,
+.home-btn-medico:hover {
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
 }
 

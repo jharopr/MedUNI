@@ -213,6 +213,19 @@ export async function registrarLlegadaTopico(citaId, usuarioId) {
   })
 }
 
+// MEDICO
+export async function fetchCitasMedico(medicoId, fecha) {
+  return http(`/doctor/${medicoId}/citas`, {}, { fecha })
+}
+
+export async function iniciarCitaMedico(medicoId, citaId) {
+  return http(`/doctor/${medicoId}/citas/${citaId}/iniciar`, { method: 'POST' })
+}
+
+export async function finalizarCitaMedico(medicoId, citaId) {
+  return http(`/doctor/${medicoId}/citas/${citaId}/finalizar`, { method: 'POST' })
+}
+
 // OTROS ALEXIS
 export async function listarHorarios({ especialidad, fecha }) {
   if (USE_MOCK) {

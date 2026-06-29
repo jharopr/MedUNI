@@ -7,7 +7,7 @@
       </div>
 
       <div class="auth-type-indicator">
-        <span class="auth-type-badge" :class="{ admin: isAdmin, topico: isTopico }">
+        <span class="auth-type-badge" :class="{ admin: isAdmin, topico: isTopico, medico: isMedico }">
           {{ authLabel }}
         </span>
         <button type="button" class="back-home-btn" @click="goHome" title="Volver al inicio">
@@ -17,14 +17,14 @@
 
       <form class="auth-form" @submit.prevent="submit" novalidate>
         <label for="username">
-          {{ isAdmin || isTopico ? 'Usuario' : 'Codigo de estudiante' }}
+          {{ isAdmin || isTopico || isMedico ? 'Usuario' : 'Codigo de estudiante' }}
         </label>
         <input
           id="username"
           v-model="username"
           type="text"
-          :inputmode="isAdmin || isTopico ? 'text' : 'numeric'"
-          :placeholder="isAdmin ? 'admin' : isTopico ? 'topico' : '2025xxxxx'"
+          :inputmode="isAdmin || isTopico || isMedico ? 'text' : 'numeric'"
+          :placeholder="isAdmin ? 'admin' : isTopico ? 'topico' : isMedico ? 'beatriz' : '2025xxxxx'"
           class="auth-input"
           autocomplete="username"
         />
@@ -39,7 +39,7 @@
           autocomplete="current-password"
         />
 
-        <a href="#" class="auth-forgot" v-if="!isAdmin && !isTopico">Olvide mi contrasena</a>
+        <a href="#" class="auth-forgot" v-if="!isAdmin && !isTopico && !isMedico">Olvide mi contrasena</a>
         <button type="submit" class="auth-btn" :disabled="loading">
           <span v-if="!loading">Acceder</span>
           <span v-else>Accediendo...</span>
@@ -66,10 +66,12 @@ const loading = ref(false);
 const errorMessage = ref(null);
 const isAdmin = ref(false);
 const isTopico = ref(false);
+const isMedico = ref(false);
 
 const authLabel = computed(() => {
   if (isAdmin.value) return 'Administrador';
   if (isTopico.value) return 'Personal de topico';
+  if (isMedico.value) return 'Medico';
   return 'Estudiante';
 });
 
@@ -77,6 +79,7 @@ onMounted(() => {
   const tipo = route.query.tipo;
   isAdmin.value = tipo === 'administrador';
   isTopico.value = tipo === 'topico';
+  isMedico.value = tipo === 'medico';
 });
 
 function goHome() {
@@ -88,13 +91,15 @@ async function submit() {
   errorMessage.value = null;
 
   try {
-    const role = isAdmin.value ? 'administrador' : isTopico.value ? 'topico' : 'estudiante';
+    const role = isAdmin.value ? 'administrador' : isTopico.value ? 'topico' : isMedico.value ? 'medico' : 'estudiante';
     await auth.login(username.value, password.value, role);
 
     if (isAdmin.value) {
       router.push('/admin/dashboard');
     } else if (isTopico.value) {
       router.push('/topico/check-in');
+    } else if (isMedico.value) {
+      router.push('/medico/citas');
     } else {
       router.push('/calendario');
     }
@@ -175,6 +180,11 @@ label{ color:#5f6b7a; font-size:clamp(.9rem,.85rem + .3vw,1rem); }
 .auth-type-badge.topico {
   background: #e0f2fe;
   color: #075985;
+}
+
+.auth-type-badge.medico {
+  background: #dcfce7;
+  color: #166534;
 }
 
 .back-home-btn {

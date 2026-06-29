@@ -13,4 +13,6 @@ class AuthenticatedUser(BaseModel):
     correo: str
     codEstudiante: Optional[str] = None
     username: Optional[str] = None
+    especialidadId: Optional[int] = None
+    especialidadNombre: Optional[str] = None
     role: str

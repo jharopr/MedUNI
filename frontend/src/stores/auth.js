@@ -13,7 +13,8 @@ export const useAuth = defineStore('auth', {
     isAuth: (s) => !!s.token,
     isAdmin: (s) => s.role === 'administrador',
     isEstudiante: (s) => s.role === 'estudiante',
-    isTopico: (s) => s.role === 'topico'
+    isTopico: (s) => s.role === 'topico',
+    isMedico: (s) => s.role === 'medico'
   },
   actions: {
     async login(username, password, role = 'estudiante') {

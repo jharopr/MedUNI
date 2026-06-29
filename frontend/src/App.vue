@@ -39,6 +39,11 @@ const onLogout = async () => {
                 Check-in
               </RouterLink>
             </li>
+            <li class="nav-item" v-if="auth.isMedico">
+              <RouterLink class="nav-link text-white" to="/medico/citas">
+                Mis pacientes
+              </RouterLink>
+            </li>
             <li class="nav-item">
               <button class="btn btn-outline-light btn-sm" @click="onLogout">Salir</button>
             </li>
